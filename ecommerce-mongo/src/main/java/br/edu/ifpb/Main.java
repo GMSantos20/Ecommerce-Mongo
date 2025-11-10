@@ -1,11 +1,9 @@
 package br.edu.ifpb;
 
 import br.edu.ifpb.Dao.ClienteDao;
+import br.edu.ifpb.Dao.CompraDao;
 import br.edu.ifpb.Dao.ProdutoDAO;
-import br.edu.ifpb.model.Cliente;
-import br.edu.ifpb.model.Compra;
-import br.edu.ifpb.model.ItemCompra;
-import br.edu.ifpb.model.Produto;
+import br.edu.ifpb.model.*;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -41,6 +39,7 @@ public class Main {
                 MongoDatabase mongoDatabase=mongoClient.getDatabase("ecommerce");
                 ClienteDao clienteDao=new ClienteDao(mongoDatabase);
                 ProdutoDAO produtoDAO=new ProdutoDAO(mongoDatabase);
+                CompraDao compraDao=new CompraDao(mongoDatabase);
 
 
 
@@ -118,12 +117,52 @@ public class Main {
                                 Compra compra = new Compra();
                                 compra.setCliente(cliente);
                                 compra.addItem(new ItemCompra(produto,quantidade, produto.getValor()));
+                                if(compra.getItens().isEmpty()){
+                                    System.out.println("nenhum item adicionado ao carrinho");
+                                    return;
+                                }
+                                System.out.println("total da compra: (" + compra.getTotal() + " )");
+                                System.out.println("pagamento( 1-Boleto 2-cartao)");
+                                int tipoPagamento=new Scanner(System.in).nextInt();
+
+                                switch (tipoPagamento){
+                                    case 1->{
+                                        System.out.println("compra realizada com sucesso");
+                                    }
+                                    case 2->{
+                                        System.out.println("informe o numero do cartado:");
+                                        String numeroCartao=new Scanner(System.in).nextLine();
+                                        System.out.println("informe o nome impresso no cartao");
+                                        String nomeImpresso= new Scanner(System.in).nextLine();
+                                        compra.setPagamento(new PagamentoCartao(compra.getTotal(), numeroCartao , nomeImpresso));
+
+                                    }
+                                }
+                                compraDao.salvarCompra(compra);
+                                System.out.println("compra realizada com sucesso");
 
                             }
-                        }
-                        case 6 -> System.out.println("6-listar compras de um cliente");
 
-                        case 0-> System.out.println( "0-sair");
+                        }
+                        case 6 ->{
+                            System.out.println("digite o id do cliente");
+                            String idCliente= new Scanner(System.in).nextLine();
+                            Cliente cliente= clienteDao.buscarPorId(idCliente);
+
+                            if(cliente == null){
+                                System.out.println("cliente nao encontrado");
+                                return;
+                            }
+                            compraDao.buscarTodosPeloIdCliente(idCliente).forEach(compra ->{
+                                System.out.println("id: "+ compra.getId() + " data: "+  compra.getData() + "total: " + compra.getTotal());
+                            });
+
+                        }
+
+                        case 0->{
+                            System.out.println( "saindo...");
+                        }
+                        default ->System.out.println("opçao invalida camarada!!!");
                     }
                 }while (opcao != 0);
 
